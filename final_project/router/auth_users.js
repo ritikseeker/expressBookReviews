@@ -32,7 +32,7 @@ regd_users.post("/login", (req, res) => {
     // Generate JWT token
     const accessToken = jwt.sign(
         { username: username },
-        "fingerprint_customer", // Secret key (should match the one used in your session)
+        "fingerprint_customer",
         { expiresIn: "1h" }
     );
 
@@ -45,8 +45,52 @@ regd_users.post("/login", (req, res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+    // Get ISBN from URL params
+    const isbn = req.params.isbn;
+
+    // Get review text from request query
+    const review = req.query.review;
+
+    // Check if review text is provided
+    if (!review) {
+        return res.status(400).json({ message: "Review text is required as a query parameter." });
+    }
+
+    // Check if book exists
+    if (!books[isbn]) {
+        return res.status(404).json({ message: "Book not found." });
+    }
+
+    // Get username from session (set during login)
+    const username = req.session.authorization && req.session.authorization.username;
+    if (!username) {
+        return res.status(401).json({ message: "User not authenticated." });
+    }
+
+    // Add or modify the review
+    if (!books[isbn]["reviews"]) {
+        books[isbn]["reviews"] = {};
+    }
+    books[isbn]["reviews"][username] = review;
+
+    return res.status(200).json({ message: "Review added/modified successfully!", reviews: books[isbn]["reviews"] });
+});
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    const isbn = req.params.isbn;
+    // Check if book exists
+    if (!books[isbn]) {
+        return res.status(404).json({ message: "Book not found." });
+    }
+
+    // Get username from session (set during login)
+    const username = req.session.authorization && req.session.authorization.username;
+    if (!username) {
+        return res.status(401).json({ message: "User not authenticated." });
+    }
+    books[isbn]["reviews"][username]
+
+    return res.status(200).json({message:"Deleted successfully"})
 });
 
 module.exports.authenticated = regd_users;
